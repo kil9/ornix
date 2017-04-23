@@ -1,2 +1,2 @@
 # ornix
-orpg bot
+nixiko: orpg bot
