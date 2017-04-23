@@ -7,5 +7,9 @@ app = Flask(__name__)
 def main():
     return render_template('index.html')
 
+@app.route('/api', methods=['POST'])
+def api():
+    return 'ok'
+
 if __name__ == '__main__':
     app.run(port=20000, debug=True)
