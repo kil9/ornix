@@ -4,31 +4,51 @@ import random
 from flask import render_template
 from flask import Flask
 from flask import request
+from flask import Response
 
 app = Flask(__name__)
-
-URL='https://hooks.slack.com/services/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'
-
 
 @app.route('/')
 def main():
     return render_template('index.html')
 
-@app.route('/event', methods=['POST'])
-def event():
-    token = request.form['body']['challenge']
-    return token
-
 @app.route('/api', methods=['POST'])
 def api():
+    print(request.form)
     msg = request.form['text']
+    username = request.form['user_name']
 
-    headers = {'Content-type': 'application/json'}
-    raw_data = {"text": msg}
+    '''
+    raw_data = {
+            "response_type": "in_channel",
+            "text": '@' + username + ': ' + msg,
+            "attachments": [
+                { "text": '2d4+2' },
+                {"fields": [
+                    {
+                        "title": "Roll",
+                        "value": "2 4",
+                        "short": True
+                        },
+                    {
+                        "title": "Result",
+                        "value": "8",
+                        "short": True
+                        }
+                    ]
+                    }
+                ]
+            }
+            '''
+    raw_data = {
+            "response_type": "in_channel",
+            "text": '@' + username + ' ' + msg,
+            }
+
     encoded = json.dumps(raw_data)
-    requests.post(URL, headers=headers, data=encoded)
+    resp = Response(encoded, content_type='application/json')
 
-    return ''
+    return resp
 
 if __name__ == '__main__':
     app.run(port=20000, debug=True)
