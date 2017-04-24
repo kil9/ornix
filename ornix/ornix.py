@@ -30,7 +30,7 @@ def parse_command(cmd, username):
         character.contents = json.dumps(contents)
         db.session.add(character)
         db.session.commit()
-        return '현재 HP를 저장했습니다.'
+        return '현재 HP: {}'.format(hp)
     elif command.lower() == 'hp' and len(splitted) == 0:
         character = get_character(username)
         contents = json.loads(character.contents)
