@@ -12,7 +12,7 @@ class Character(db.Model):
 
     def __init__(self, name):
         self.name = name
-        self.contents = '{}'
+        self.contents = '{"hp": 0}'
         self.created_at = datetime.now()
         self.updated_at = datetime.now()
 
