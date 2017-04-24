@@ -67,9 +67,13 @@ def api():
                     ]
                 }
     else:
+        if r_msg:
+            msg = '@' + username + ' ' + r_msg
+        else:
+            msg = '@' + username + ' ?'
         raw_data = {
                 "response_type": "in_channel",
-                "text": '@' + username + ' ' + r_msg,
+                "text": msg
                 }
 
     encoded = json.dumps(raw_data)
