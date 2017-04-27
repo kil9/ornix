@@ -19,6 +19,7 @@ def get_character(username):
         character = Character(username)
     return character
 
+
 def parse_command(cmd, username):
     command, *splitted = cmd.split(' ')
     if command.lower() == 'echo':
