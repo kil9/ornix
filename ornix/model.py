@@ -1,3 +1,5 @@
+import json
+
 from datetime import datetime
 
 from config import db
@@ -18,6 +20,13 @@ class Character(db.Model):
 
     def __repr__(self):
         return '<Character [{}]>'.format(self.name)
+
+    def get_contents(self):
+        return json.loads(self.contents)
+
+    def set_contents(self, contents):
+        self.contents = json.dumps(contents)
+
 
 if __name__ == '__main__':
     db.drop_all()

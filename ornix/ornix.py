@@ -39,14 +39,34 @@ def hp():
 
             fields = []
             for character in characters:
-                contents = json.loads(character.contents)
+                contents = character.get_contents()
+                hp = str(contents['hp'])
+                max_hp = str(contents['max_hp']) if 'max_hp' in contents else hp
                 field = {
                         'title': character.name,
-                        'value': contents['hp'],
+                        'value': '{}/{}'.format(hp, max_hp),
                         'short': True
                         }
                 fields.append(field)
             return make_response(username, fields)
+        elif splitted[0] == 'max':
+            character = get_character(username)
+            contents = character.get_contents()
+            if len(splitted) > 1:
+                try:
+                    max_hp = int(splitted[1])
+                except ValueError:
+                    max_hp = 0
+                contents['max_hp'] = max_hp
+                character.set_contents(contents)
+                db.session.add(character)
+                db.session.commit()
+            else:
+                max_hp = contents['max_hp']
+            return make_response(username, 'Max HP: {}'.format(max_hp))
+
+
+
 
         try:
             hp = int(splitted[0])
@@ -54,20 +74,22 @@ def hp():
             hp = 0
             
         character = get_character(username)
-        contents = json.loads(character.contents)
+        contents = character.get_contents()
         current_hp = int(contents['hp'])
+        max_hp = contents['max_hp']
         if splitted[0].startswith('+') or splitted[0].startswith('-'):
             current_hp += hp
         else:
             current_hp = hp
+        current_hp = min(current_hp, max_hp)
         contents['hp'] = current_hp
-        character.contents = json.dumps(contents)
+        character.set_contents(contents)
         db.session.add(character)
         db.session.commit()
         return make_response(username, 'Current HP: {}'.format(current_hp))
     else:
         character = get_character(username)
-        contents = json.loads(character.contents)
+        contents = character.get_contents()
         hp = contents['hp']
         return make_response(username, 'Current HP: {}'.format(hp))
 
@@ -87,7 +109,7 @@ def make_response(username, msg):
         raw_data = {
                 "response_type": "in_channel",
                 "attachments": [
-                    { "text": '*Party HP*' },
+                    { "text": '**Party HP**' },
                     {"fields": msg } ] }
     else:
         if msg:
