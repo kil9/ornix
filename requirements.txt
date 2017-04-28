@@ -8,6 +8,7 @@ Jinja2==2.9.6
 Logentries==0.17
 MarkupSafe==1.0
 psycopg2==2.7.1
+PyMySQL==0.7.11
 requests==2.13.0
 SQLAlchemy==1.1.9
 uWSGI==2.0.15

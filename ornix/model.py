@@ -4,6 +4,14 @@ from datetime import datetime
 
 from config import db
 
+
+def get_character(username):
+    character = db.session.query(Character).filter_by(name=username).one_or_none()
+    if character is None:
+        character = Character(username)
+    return character
+
+
 class Character(db.Model):
     __tablename__ = 'characters'
     id = db.Column(db.Integer, primary_key=True)
@@ -29,5 +37,5 @@ class Character(db.Model):
 
 
 if __name__ == '__main__':
-    db.drop_all()
+    #db.drop_all()
     db.create_all()
