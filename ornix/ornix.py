@@ -8,26 +8,94 @@ from flask import request
 
 from config import *
 from model import *
+from utils import *
 
 @app.route('/')
 def main():
     return render_template('index.html')
 
-def signed(n):
-    if n > 0:
-        return '+' + str(n)
-    elif n == 0:
-        return '0'
-    else:
-        return str(n)
+@app.route('/api/ac', methods=['POST'])
+def ac():
+    print(request.form)
+    msg = request.form['text']
+    username = request.form['user_name']
+    user_id = request.form['user_id']
+    splitted = msg.split(' ')
+    log.debug(splitted)
 
-def modifier(n):
-    if n > 0:
-        return '+ ' + str(n)
-    elif n == 0:
-        return ''
+    character = get_character(username)
+    contents = character.get_contents()
+    contents['user_id'] = user_id
+    name = character.name if not 'user_id' in contents else '<@{}|{}>'.format(contents['user_id'], character.name)
+
+    if len(splitted[0]) == 0:
+        ac = contents['ac']['normal'] if 'ac' in contents else 0
+        ac_flatfooted = contents['ac']['flatfooted'] if 'ac' in contents else 0
+        ac_touch = contents['ac']['touch'] if 'ac' in contents else 0
+
+        fields = [{ 'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch) }]
+        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name), color=BLUE)
+
+    if len(splitted) > 1 and splitted[0] in ('flat', 'flatfooted', 'flat-footed'):
+        ac = contents['ac']['normal'] if 'ac' in contents else 0
+        ac_flatfooted = get_int(splitted[1], 0)
+        contents['ac']['flatfooted'] = ac_flatfooted
+        ac_touch = contents['ac']['touch'] if 'ac' in contents else 0
+        set_and_commit(character, contents)
+        fields = [{ 'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch) }]
+        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name), color=BLUE)
+
+    if len(splitted) > 1 and splitted[0] in ('touch', 'touched'):
+        ac = contents['ac']['normal'] if 'ac' in contents else 0
+        ac_flatfooted = contents['ac']['flatfooted'] if 'ac' in contents else 0
+        ac_touch = get_int(splitted[1], 0)
+        contents['ac']['touch'] = ac_touch
+        set_and_commit(character, contents)
+        fields = [{ 'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch) }]
+        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name), color=BLUE)
+
+    if splitted[0] in ('party', 'all'):
+        characters = db.session.query(Character).all()
+
+        fields = []
+        for character in characters:
+            contents = character.get_contents()
+            if 'ac' in contents:
+                ac = contents['ac']['normal']
+                ac_flatfooted = contents['ac']['flatfooted']
+                ac_touch = contents['ac']['touch']
+                formatted = '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)
+            else:
+                continue
+            field = {
+                    'title': character.name,
+                    'value': formatted,
+                    'short': True,
+                    }
+            fields.append(field)
+
+        return make_response(fields, 'Party AC (normal/flat-footed/touch)', color=BLUE)
+
+    try:
+        ac = int(splitted[0])
+    except ValueError:
+        ac = 0
+
+    if 'ac' in contents:
+        contents['ac']['normal'] = ac
+        ac_flatfooted = contents['ac']['flatfooted']
+        ac_touch = contents['ac']['touch']
     else:
-        return '- ' + str(abs(n))
+        contents['ac'] = {
+                'normal': ac,
+                'flatfooted': ac,
+                'touch': ac }
+        ac_flatfooted = ac
+        ac_touch = ac
+    set_and_commit(character, contents)
+
+    fields = [{ 'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch) }]
+    return make_response(fields, '{}\'s Current AC (normal/flat-footed/touch)'.format(name), color=BLUE)
 
 
 @app.route('/api/init', methods=['POST'])
@@ -56,9 +124,7 @@ def init():
                     'value': '{}'.format(last_init),
                     'short': True }]
         contents['last_init'] = last_init
-        character.set_contents(contents)
-        db.session.add(character)
-        db.session.commit()
+        set_and_commit(character, contents)
         if roll > 14:
             color = 'good'
         elif roll > 7:
@@ -74,11 +140,9 @@ def init():
             except ValueError:
                 init_mod = 0
             contents['init_mod'] = init_mod
-        character.set_contents(contents)
-        db.session.add(character)
-        db.session.commit()
+        set_and_commit(character, contents)
         fields = [{ 'value': signed(init_mod) }]
-        return make_response(fields, '{}\'s Initiative modifier'.format(name), color='#439FE0')
+        return make_response(fields, '{}\'s Initiative modifier'.format(name), color=BLUE)
 
     if splitted[0] == 'set':
         if len(splitted) > 1:
@@ -87,29 +151,46 @@ def init():
             except ValueError:
                 last_init = 0
             contents['last_init'] = last_init
-        character.set_contents(contents)
-        db.session.add(character)
-        db.session.commit()
+        set_and_commit(character, contents)
         fields = [{ 'value': str(last_init) }]
-        return make_response(fields, '{}\'s Initiative value'.format(name), color='#439FE0')
+        return make_response(fields, '{}\'s Initiative value'.format(name), color=BLUE)
 
-    if splitted[0] == 'party':
+    if splitted[0] in ('party', 'all'):
         characters = db.session.query(Character).all()
 
         char_inits = []
         for character in characters:
             contents = character.get_contents()
             if 'last_init' in contents:
-                last_init = str(contents['last_init'])
+                last_init = int(contents['last_init'])
                 name = character.name if not 'user_id' in contents else '<@{}|{}>'.format(contents['user_id'], character.name)
                 char_inits.append((name, last_init))
-        sorted_inits = sorted(char_inits, key=lambda tup: tup[1])
+        sorted_inits = sorted(char_inits, key=lambda tup: tup[1], reverse=True)
 
         merged_inits = ['{} ({})'.format(name, init) for name, init in sorted_inits]
         formatted_inits = ' > '.join(merged_inits)
 
         fields = [{ 'value': formatted_inits }]
-        return make_response(fields, 'Round initiatives', color='#439FE0')
+        return make_response(fields, 'Round initiatives', color=BLUE)
+    if splitted[0] in ('CLEAR', 'REMOVE'):
+        if 'last_init' in contents:
+            del(contents['last_init'])
+            character.set_contents(contents)
+            db.session.add(character)
+        db.session.commit()
+        return make_response('Your initiative is removed')
+
+    if splitted[0] in ('ALLCLEAR', 'ALLREMOVE'):
+        characters = db.session.query(Character).all()
+        for character in characters:
+            contents = character.get_contents()
+            if 'last_init' in contents:
+                del(contents['last_init'])
+                character.set_contents(contents)
+                db.session.add(character)
+        db.session.commit()
+        return make_response('All initiatives are removed')
+
 
     return process_unknown(username)
 
@@ -123,7 +204,7 @@ def process_unknown(username):
     if random.randint(0, 1) == 0:
         characters = db.session.query(Character).all()
         character = random.choice(characters)
-        character_scripts = ('그게 무슨 {} 같은 소리다요', '그건 {}에게 말하면 된다요...?', '어째서.. {}...다요?', '{}! 일어나라요! 죽었어...?', '{}! 일어나라요! 아침이다요?', '{}! 어째서다요!')
+        character_scripts = ('피해라요 {}이 공격하고 있다요', '그게 무슨 {} 같은 소리다요', '그건 {}에게 말하면 된다요...?', '어째서.. {}...다요?', '{}! 일어나라요! 죽었어...?', '{}! 일어나라요! 아침이다요?', '{}! 어째서다요!')
         script = random.choice(character_scripts)
         return make_response('{} {}'.format(script.format(character.name), emoji), username=username)
     else:
@@ -162,7 +243,7 @@ def hp():
         score = hp/max_hp if max_hp > 0 else 0
         return make_response(fields, '{}\'s Current HP'.format(name), color=get_color(score))
 
-    if splitted[0] == 'party':
+    if splitted[0] == 'party' or splitted[0] == 'all':
         characters = db.session.query(Character).all()
 
         ratios = []
@@ -178,7 +259,8 @@ def hp():
                         'value': '{}/{}'.format(hp, max_hp),
                         'short': True
                         }
-                ratios.append(int(hp)/int(max_hp))
+                score = int(hp)/int(max_hp) if int(max_hp) != 0 else 1.0
+                ratios.append(score)
                 fields.append(field)
         score = sum(ratios)/len(ratios) if len(ratios) > 0 else 0
         return make_response(fields, color=get_color(score))
@@ -223,7 +305,7 @@ def hp():
 
         fields = [{ 'value': '{}/{}'.format(hp, max_hp) }]
         return make_response(fields, '{}\'s Current HP'.format(name), color=get_color(hp/max_hp))
-    if splitted[0] == 'REMOVE':
+    if splitted[0] in ('REMOVE', 'CLEAR'):
         if 'max_hp' in contents:
             del(contents['max_hp'])
         if 'hp' in contents:
@@ -248,6 +330,7 @@ def hp():
     current_hp = min(current_hp, max_hp)
     current_hp = max(-10, current_hp)
     contents['hp'] = current_hp
+    contents['max_hp'] = max_hp
     character.set_contents(contents)
     db.session.add(character)
     db.session.commit()
