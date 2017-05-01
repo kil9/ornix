@@ -15,9 +15,101 @@ from utils import *
 def main():
     return render_template('index.html')
 
+@app.route('/api/round', methods=['POST'])
+def round():
+    msg = request.form['text']
+    commands = msg.split(' ')
+    team_id = request.form['team_id']
+    team = db.session.query(Team).filter(Team.team_id==team_id).one_or_none()
+    team = Team(team_id) if team is None else team
+    contents = team.get_contents()
+    round = contents.get('round', 0)
+    if commands[0] == 'start': round = 1
+    elif commands[0] == 'end': round = 0
+    else: round += 1
+    contents['round'] = round
+    team.set_contents(contents)
+    db.session.add(team)
+    db.session.commit()
+    if commands[0] == 'end':
+        return make_response('*Rounds cleared!*')
+
+    attachments = [{ 'title': 'Round {}'.format(round),
+                     'color': '#f48704' }]
+    attachments += stat(True)
+    raw_data = { 'response_type': 'in_channel',
+                 'attachments': attachments }
+    encoded = json.dumps(raw_data)
+    resp = Response(encoded, content_type='application/json')
+    return resp
+
+@app.route('/api/stat', methods=['POST'])
+def stat(dict_form=False):
+    msg = request.form['text']
+    attachments = []
+    characters = db.session.query(Character).all()
+
+# read hp
+    ratios = []
+    fields = []
+    for character in characters:
+        contents = character.get_contents()
+        if 'hp' in contents:
+            hp = str(contents['hp'])
+            max_hp = str(contents['max_hp']) if 'max_hp' in contents else hp
+            name = character.name
+            field = {
+                    'title': name,
+                    'value': '{}/{}'.format(hp, max_hp),
+                    'short': True
+                    }
+            score = int(hp)/int(max_hp) if int(max_hp) != 0 else 1.0
+            ratios.append(score)
+            fields.append(field)
+    score = sum(ratios)/len(ratios) if len(ratios) > 0 else 0
+
+    attach_hp = { 'title': 'Party HP',
+                  'fields': fields,
+                  'color': get_color(score) }
+
+    attachments.append(attach_hp)
+
+# read initiatives
+    characters = db.session.query(Character).all()
+
+    char_inits = []
+    for character in characters:
+        contents = character.get_contents()
+        if 'last_init' in contents:
+            last_init = int(contents['last_init'])
+            name = character.name if not 'user_id' in contents else '<@{}|{}>'.format(contents['user_id'], character.name)
+            char_inits.append((name, last_init))
+    sorted_inits = sorted(char_inits, key=lambda tup: tup[1], reverse=True)
+
+    merged_inits = ['{} ({})'.format(name, init) for name, init in sorted_inits]
+    formatted_inits = ' > '.join(merged_inits)
+
+    fields = [{ 'value': formatted_inits }]
+
+    attach_init = { 'title': 'Round initiatives',
+                    'fields': fields,
+                    'color': BLUE }
+
+    attachments.append(attach_init)
+    if dict_form:
+        return attachments
+
+    raw_data = { 'response_type': 'in_channel',
+                 'attachments': attachments }
+    encoded = json.dumps(raw_data)
+    log.info(encoded)
+    resp = Response(encoded, content_type='application/json')
+    return resp
+
+
+
 @app.route('/api/dice', methods=['POST'])
 def dice():
-    print(request.form)
     msg = request.form['text']
     username = request.form['user_name']
     user_id = request.form['user_id']

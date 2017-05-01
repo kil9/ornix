@@ -12,6 +12,26 @@ def get_character(username):
     return character
 
 
+class Team(db.Model):
+    __tablename__ = 'globals'
+
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.String(16), unique=True)
+    contents = db.Column(db.Text)
+
+    def __init__(self, team_id):
+        self.team_id = team_id
+        self.contents = '{}'
+    
+    def __repr__(self):
+        return '<Character [{}]>'.format(self.name)
+
+    def get_contents(self):
+        return json.loads(self.contents)
+
+    def set_contents(self, contents):
+        self.contents = json.dumps(contents)
+
 class Character(db.Model):
     __tablename__ = 'characters'
     id = db.Column(db.Integer, primary_key=True)
@@ -33,6 +53,7 @@ class Character(db.Model):
         return json.loads(self.contents)
 
     def set_contents(self, contents):
+        self.updated_at = datetime.now()
         self.contents = json.dumps(contents)
 
 

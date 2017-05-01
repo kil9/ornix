@@ -16,6 +16,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 LOG_FORMAT = '%(asctime)s [%(levelname)s] %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=LOG_FORMAT)
 log = logging.getLogger(__name__)
+
 #lh = logging.FileHandler('{}/var/logs/{}.log'.format(APP_HOME, APP_NAME))
 #log.addHandler(lh)
 
