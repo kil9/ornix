@@ -280,7 +280,7 @@ def init():
 
     if commands[0] == 'set':
         if len(commands) > 1:
-            init_mod = get_int(commands[1], 0)
+            last_init = get_int(commands[1], 0)
             contents['last_init'] = last_init
         set_and_commit(character, contents)
         fields = [{ 'value': str(last_init) }]
