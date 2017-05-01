@@ -9,17 +9,17 @@ from sqlalchemy import create_engine
 APP_HOME = '/ornix'
 APP_NAME = 'ornix'
 
-#LOGENTRIES_KEY = os.environ['LOGENTRIES_KEY']
-#DATABASE_URL = os.environ['DATABASE_URL']
-DATABASE_URL = 'mysql+pymysql://ornix@localhost/ornix?charset=utf8'
+LOGENTRIES_KEY = os.environ['LOGENTRIES_KEY']
+DATABASE_URL = os.environ['DATABASE_URL']
+#DATABASE_URL = 'mysql+pymysql://ornix@localhost/ornix?charset=utf8'
 
 LOG_FORMAT = '%(asctime)s [%(levelname)s] %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=LOG_FORMAT)
-lh = logging.FileHandler('{}/var/logs/{}.log'.format(APP_HOME, APP_NAME))
 log = logging.getLogger(__name__)
-log.addHandler(lh)
+#lh = logging.FileHandler('{}/var/logs/{}.log'.format(APP_HOME, APP_NAME))
+#log.addHandler(lh)
 
-#log.addHandler(LogentriesHandler(LOGENTRIES_KEY))
+log.addHandler(LogentriesHandler(LOGENTRIES_KEY))
 
 app = Flask(APP_NAME)
 
