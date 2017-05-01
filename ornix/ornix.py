@@ -7,12 +7,48 @@ from flask import render_template
 from flask import request
 
 from config import *
+from dice_regex import *
 from model import *
 from utils import *
 
 @app.route('/')
 def main():
     return render_template('index.html')
+
+@app.route('/api/dice', methods=['POST'])
+def dice():
+    print(request.form)
+    msg = request.form['text']
+    username = request.form['user_name']
+    user_id = request.form['user_id']
+    commands = msg.split(' ')
+    log.debug(commands)
+
+    character = get_character(username)
+    contents = character.get_contents()
+    contents['user_id'] = user_id
+    name = character.name if not 'user_id' in contents else '<@{}|{}>'.format(contents['user_id'], character.name)
+
+    try:
+        result, fields, score = calculate_dice(msg)
+    except:
+        return process_unknown(username)
+
+    color = get_color(score)
+    msg = prettify(msg)
+    title = '{} rolled {}'.format(name, msg)
+    return make_response(fields, title, color=color)
+
+def prettify(s):
+    s = re.sub(r'[ \t\/]+', ' ', s)
+    s = s.replace(' ', ' / ')
+    s = s.replace('+', ' + ')
+    s = s.replace('*', ' × ')
+    s = s.replace('-', ' - ')
+    s = s.replace(')', ') ')
+    s = s.replace('(', ' (')
+    return s
+
 
 @app.route('/api/spell', methods=['POST'])
 def spell():
@@ -29,7 +65,7 @@ def spell():
     name = character.name if not 'user_id' in contents else '<@{}|{}>'.format(contents['user_id'], character.name)
 
     #contents - 'spell' - 'per day' - [...]
-                       #- 'left' - [...]
+    #                   - 'left'    - [...]
 
     if len(commands[0]) == 0 or commands[0] == 'book':
         if 'spell' not in contents:
