@@ -46,7 +46,7 @@ def round():
         db.session.commit()
         return make_response('*Rounds cleared!*')
 
-    attachments = [{'title': 'Round {}'.format(round),
+    attachments = [{'title': f'Round {round}',
                     'color': '#f48704'}]
     attachments += stat(True)
     raw_data = {'response_type': 'in_channel',
@@ -73,7 +73,7 @@ def stat(dict_form=False):
             name = character.name
             field = {
                     'title': name,
-                    'value': '{}/{}'.format(hp, max_hp),
+                    'value': f'{hp}/{max_hp}',
                     'short': True
                     }
             score = int(hp)/int(max_hp) if int(max_hp) != 0 else 1.0
@@ -98,11 +98,11 @@ def stat(dict_form=False):
             if 'user_id' not in contents:
                 name = character.name
             else:
-                name = '<@{}|{}>'.format(contents['user_id'], character.name)
+                name = f'<@{contents["user_id"]}|{character.name}>'
             char_inits.append((name, last_init))
     sorted_inits = sorted(char_inits, key=lambda tup: tup[1], reverse=True)
 
-    merged_inits = ['{} ({})'.format(name, init) for name, init in sorted_inits]
+    merged_inits = [f'{name} ({init})' for name, init in sorted_inits]
     formatted_inits = ' > '.join(merged_inits)
 
     fields = [{'value': formatted_inits}]
@@ -137,7 +137,7 @@ def dice():
     if 'user_id' not in contents:
         name = character.name
     else:
-        name = '<@{}|{}>'.format(contents['user_id'], character.name)
+        name = f'<@{contents["user_id"]}|{character.name}>'
 
     try:
         titles, evaluated, results, score = parse_dice(msg)
@@ -146,7 +146,7 @@ def dice():
 
     color = get_color(score)
     roll_title = ' / '.join(titles)
-    title = '{} rolled {}'.format(name, roll_title)
+    title = f'{name} rolled {roll_title}'
     fields = []
     for i in range(len(titles)):
         if len(evaluated[i]) == 0:
@@ -179,7 +179,7 @@ def spell():
     if 'user_id' not in contents:
         name = character.name
     else:
-        name = '<@{}|{}>'.format(contents['user_id'], character.name)
+        name = f'<@{contents["user_id"]}|{character.name}>'
 
     # contents - 'spell' - 'per day' - [...]
     #                    - 'left'    - [...]
@@ -195,7 +195,7 @@ def spell():
                    'value': ' / '.join(map(str, per_days))},
                   {'title': 'Spells Left',
                    'value': ' / '.join(map(str, lefts))}]
-        return make_response(fields, '{}\'s Spellbook'.format(name))
+        return make_response(fields, f'{name}\'s Spellbook')
 
     if len(commands) > 1 and commands[0] in ('set', 'per day'):
         raw_spells = commands[1].split('/')
@@ -212,7 +212,7 @@ def spell():
                    'value': ' / '.join(map(str, spells))},
                   {'title': 'Spells left',
                    'value': ' / '.join(map(str, contents['spell']['left']))}]
-        return make_response(fields, '{}\'s Spellbook'.format(name))
+        return make_response(fields, f'{name}\'s Spellbook')
 
     if len(commands) > 1 and commands[0] == 'left':
         if 'spell' not in contents:
@@ -228,7 +228,7 @@ def spell():
                    'value': ' / '.join(map(str, contents['spell']['per day']))},
                   {'title': 'Spells left',
                    'value': ' / '.join(map(str, spells))}]
-        return make_response(fields, '{}\'s Spellbook'.format(name))
+        return make_response(fields, f'{name}\'s Spellbook')
 
     if len(commands) > 1 and commands[0] in ('use', 'cast'):
         if 'spell' not in contents:
@@ -242,7 +242,7 @@ def spell():
         used_level = get_int(commands[1], 0)
         if used_level < 0 or used_level > 9:
             return make_response(
-                    'There are no {}-level spells'.format(used_level), username=username)
+                    f'There are no {used_level}-level spells', username=username)
 
         per_day = contents['spell']['per day']
         lefts = contents['spell']['left']
@@ -250,7 +250,7 @@ def spell():
             fields = [{'title': 'Spells left',
                        'value': ' / '.join(map(str, lefts))}]
             return make_response(
-                    fields, 'No {}-level spells left!'.format(used_level), color='danger')
+                    fields, f'No {used_level}-level spells left!', color='danger')
         lefts[used_level] -= 1
         contents['spell']['left'] = lefts
         set_and_commit(character, contents)
@@ -260,7 +260,7 @@ def spell():
                    'value': ' / '.join(map(str, lefts))}]
         return make_response(
                 fields,
-                '{} casted a {}-level spell{}'.format(name, used_level, spell_name), color=color)
+                f'{name} casted a {used_level}-level spell{spell_name}', color=color)
 
     if commands[0] in ('full', 'memorize'):
         if 'spell' not in contents:
@@ -271,7 +271,7 @@ def spell():
                    'value': ' / '.join(map(str, spells))},
                   {'title': 'Spells Left',
                    'value': ' / '.join(map(str, spells))}]
-        return make_response(fields, '{}\'s spell slots are now fully recovered'.format(name))
+        return make_response(fields, f'{name}\'s spell slots are now fully recovered')
 
     return process_unknown(username)
 
@@ -291,15 +291,15 @@ def ac():
     if 'user_id' not in contents:
         name = character.name
     else:
-        name = '<@{}|{}>'.format(contents['user_id'], character.name)
+        name = f'<@{contents["user_id"]}|{character.name}>'
 
     if len(commands[0]) == 0:
         ac = contents['ac']['normal'] if 'ac' in contents else 0
         ac_flatfooted = contents['ac']['flatfooted'] if 'ac' in contents else 0
         ac_touch = contents['ac']['touch']
 
-        fields = [{'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)}]
-        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name))
+        fields = [{'value': f'{ac}/{ac_flatfooted}/{ac_touch}'}]
+        return make_response(fields, f'{name}\'s Current normal/flat-footed/touch AC')
 
     if len(commands) > 1 and commands[0] == 'set':
         raw_acs = commands[1].split('/')
@@ -309,7 +309,7 @@ def ac():
                           'touch': acs[2]}
         set_and_commit(character, contents)
         fields = [{'value': '{}/{}/{}'.format(acs[0], acs[1], acs[2])}]
-        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name))
+        return make_response(fields, f'{name}\'s Current normal/flat-footed/touch AC')
 
     if len(commands) > 1 and commands[0] in ('flat', 'flatfooted', 'flat-footed'):
         if 'ac' not in contents:
@@ -320,8 +320,8 @@ def ac():
         contents['ac']['flatfooted'] = ac_flatfooted
         ac_touch = contents['ac']['touch']
         set_and_commit(character, contents)
-        fields = [{'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)}]
-        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name))
+        fields = [{'value': f'{ac}/{ac_flatfooted}/{ac_touch}'}]
+        return make_response(fields, f'{name}\'s Current normal/flat-footed/touch AC')
 
     if len(commands) > 1 and commands[0] in ('touch', 'touched'):
         if 'ac' not in contents:
@@ -331,8 +331,8 @@ def ac():
         ac_touch = get_int(commands[1], 0)
         contents['ac']['touch'] = ac_touch
         set_and_commit(character, contents)
-        fields = [{'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)}]
-        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name))
+        fields = [{'value': f'{ac}/{ac_flatfooted}/{ac_touch}'}]
+        return make_response(fields, f'{name}\'s Current normal/flat-footed/touch AC')
 
     if commands[0] in ('party', 'all'):
         characters = db.session.query(Character).all()
@@ -369,8 +369,8 @@ def ac():
         ac_touch = ac
     set_and_commit(character, contents)
 
-    fields = [{'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)}]
-    return make_response(fields, '{}\'s Current AC (normal/flat-footed/touch)'.format(name))
+    fields = [{'value': f'{ac}/{ac_flatfooted}/{ac_touch}'}]
+    return make_response(fields, f'{name}\'s Current AC (normal/flat-footed/touch)')
 
 
 @app.route('/api/init', methods=['POST'])
@@ -388,7 +388,7 @@ def init():
     if 'user_id' not in contents:
         name = character.name
     else:
-        name = '<@{}|{}>'.format(contents['user_id'], character.name)
+        name = f'<@{contents["user_id"]}|{character.name}>'
 
     if len(commands[0]) == 0 or commands[0] == 'roll':
         init_mod = int(contents['init_mod']) if 'init_mod' in contents else 0
@@ -396,10 +396,10 @@ def init():
         roll = random.randint(1, 20)
         last_init = roll + init_mod
         fields = [{'title': 'Rolls',
-                   'value': '{}'.format(roll),
+                   'value': f'{roll}',
                    'short': True},
                   {'title': 'Result',
-                   'value': '{}'.format(last_init),
+                   'value': f'{last_init}',
                    'short': True}]
         contents['last_init'] = last_init
         set_and_commit(character, contents)
@@ -416,7 +416,7 @@ def init():
         contents['init_mod'] = init_mod
         set_and_commit(character, contents)
         fields = [{'value': signed(init_mod)}]
-        return make_response(fields, '{}\'s Initiative modifier'.format(name))
+        return make_response(fields, f'{name}\'s Initiative modifier')
 
     if commands[0] == 'set':
         if len(commands) > 1:
@@ -424,7 +424,7 @@ def init():
             contents['last_init'] = last_init
         set_and_commit(character, contents)
         fields = [{'value': str(last_init)}]
-        return make_response(fields, '{}\'s Initiative value'.format(name))
+        return make_response(fields, f'{name}\'s Initiative value')
 
     if commands[0] in ('party', 'all'):
         characters = db.session.query(Character).all()
@@ -437,11 +437,11 @@ def init():
                 if 'user_id' not in contents:
                     name = character.name
                 else:
-                    name = '<@{}|{}>'.format(contents['user_id'], character.name)
+                    name = f'<@{contents["user_id"]}|{character.name}>'
                 char_inits.append((name, last_init))
         sorted_inits = sorted(char_inits, key=lambda tup: tup[1], reverse=True)
 
-        merged_inits = ['{} ({})'.format(name, init) for name, init in sorted_inits]
+        merged_inits = [f'{name} ({init})' for name, init in sorted_inits]
         formatted_inits = ' > '.join(merged_inits)
 
         fields = [{'value': formatted_inits}]
@@ -483,14 +483,14 @@ def hp():
     if 'user_id' not in contents:
         name = character.name
     else:
-        name = '<@{}|{}>'.format(contents['user_id'], character.name)
+        name = f'<@{contents["user_id"]}|{character.name}>'
 
     if len(commands[0]) == 0:
         hp = contents['hp'] if 'hp' in contents else 0
         max_hp = contents['max_hp'] if 'max_hp' in contents else 0
-        fields = [{'value': '{}/{}'.format(hp, max_hp)}]
+        fields = [{'value': f'{hp}/{max_hp}'}]
         score = hp/max_hp if max_hp > 0 else 0
-        return make_response(fields, '{}\'s Current HP'.format(name), color=get_color(score))
+        return make_response(fields, f'{name}\'s Current HP', color=get_color(score))
 
     if commands[0] == 'party' or commands[0] == 'all':
         characters = db.session.query(Character).all()
@@ -503,11 +503,9 @@ def hp():
                 hp = str(contents['hp'])
                 max_hp = str(contents['max_hp']) if 'max_hp' in contents else hp
                 name = character.name
-                field = {
-                        'title': name,
-                        'value': '{}/{}'.format(hp, max_hp),
-                        'short': True
-                        }
+                field = {'title': name,
+                         'value': '{}/{}'.format(hp, max_hp),
+                         'short': True}
                 score = int(hp)/int(max_hp) if int(max_hp) != 0 else 1.0
                 ratios.append(score)
                 fields.append(field)
@@ -523,7 +521,7 @@ def hp():
             if 'hp' in contents:
                 hp = str(contents['hp'])
                 max_hp = str(contents['max_hp']) if 'max_hp' in contents else hp
-                msgs.append('@{} : {}/{}'.format(character.name, hp, max_hp))
+                msgs.append(f'@{character.name} : {hp}/{max_hp}')
         msg = '\n'.join(msgs)
         return make_response(msg)
 
@@ -539,9 +537,9 @@ def hp():
             set_and_commit(character, contents)
         else:
             max_hp = contents['max_hp']
-        fields = [{'value': '{}/{}'.format(hp, max_hp)}]
+        fields = [{'value': f'{current_hp}/{max_hp}'}]
         score = hp/max_hp if max_hp > 0 else 0
-        return make_response(fields, '{}\'s Current HP'.format(name), color=get_color(score))
+        return make_response(fields, f'{name}\'s Current HP', color=get_color(score))
 
     if commands[0] == 'full':
         max_hp = int(contents['max_hp'])
@@ -549,8 +547,8 @@ def hp():
         contents['hp'] = hp
         set_and_commit(character, contents)
 
-        fields = [{'value': '{}/{}'.format(hp, max_hp)}]
-        return make_response(fields, '{}\'s Current HP'.format(name), color=get_color(hp/max_hp))
+        fields = [{'value': f'{current_hp}/{max_hp}'}]
+        return make_response(fields, f'{name}\'s Current HP', color=get_color(hp/max_hp))
 
     if commands[0] in ('REMOVE', 'CLEAR'):
         if 'max_hp' in contents:
@@ -576,7 +574,7 @@ def hp():
     set_and_commit(character, contents)
     score = current_hp/max_hp if max_hp != 0 else 1
     color = get_color(score)
-    fields = [{'value': '{}/{}'.format(current_hp, max_hp)}]
+    fields = [{'value': f'{current_hp}/{max_hp}'}]
     return make_response(fields, 'Current HP', color=color)
 
 
@@ -608,7 +606,7 @@ def process_unknown(username):
             '{} 의 파워어택이다요! 효과는 굉장했다요..?')
         script = random.choice(character_scripts)
         return make_response(
-                '{} {}'.format(script.format('@' + character.name), emoji), username=username)
+                '{} {}'.format(script.format(f'@{character.name}'), emoji), username=username)
     else:
         scripts = (
             '그렇다요',
@@ -620,7 +618,7 @@ def process_unknown(username):
             '알았다요',
             '아 미안하다요 잠깐 졸았다요')
         script = random.choice(scripts)
-        return make_response('{} {}'.format(script, emoji), username=username)
+        return make_response(f'{script} {emoji}', username=username)
 
 
 @app.route('/api', methods=['POST'])
@@ -639,7 +637,7 @@ def make_response(msg, title=None, color=BLUE, username=None):
                                      'fields': msg}]}
     else:
         if username and msg:
-            msg = '@' + username + ' ' + msg
+            msg = f'@{username} {msg}'
         raw_data = {'response_type': 'in_channel',
                     'text': msg}
 
