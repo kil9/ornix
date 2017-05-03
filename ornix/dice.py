@@ -11,7 +11,7 @@ def tokenize(code):
 
     token_specification = [
             ('DICE', r'(?P<dnum>\d*)[d|D](?P<dtype>[\d|%]+)'),
-            ('NUM', r'[\d|\.]+'),
+            ('NUM', r'(\d*\.*\d+)'),
             ('ADD', r'\+'),
             ('SUB', r'\-'),
             ('MUL', r'\*'),
@@ -29,7 +29,8 @@ def tokenize(code):
         if kind == 'SKIP':
             pass
         elif kind == 'MISMATCH':
-            raise RuntimeError(f'{value!r} unexpected')
+            # raise RuntimeError(f'{value!r} unexpected')
+            yield Token('DICE', '1d20', {'dnum': '1', 'dtype': '20'})
         else:
             yield Token(kind, value, d)
 
@@ -98,3 +99,4 @@ if __name__ == '__main__':
     print(parse_dice("1d4+1 1d4+1"))
     print(parse_dice("1d4+2d6+1/1d4+1"))
     print(parse_dice("1d4+1 / 1d4+1"))
+    print(parse_dice("1d4+1+."))
