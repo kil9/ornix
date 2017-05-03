@@ -53,7 +53,6 @@ def parse_dice(dice_str):
                 calculated = ''
                 evaluated.append(evaluates)
                 evaluates = []
-            field.append(token.value)
             if len(token.d['dnum']) > 0:
                 dnum = max(1, min(100, int(token.d['dnum'])))
             else:
@@ -65,8 +64,8 @@ def parse_dice(dice_str):
             rolls = [random.randint(1, dtype) for i in range(dnum)]
             scores.append(sum(rolls)/len(rolls)/dtype)
             evaluates += rolls
-
             calculated += str(sum(rolls))
+            field.append(f'{dnum}d{dtype}')
         elif token.type == 'NUM':
             if token_before and token_before.type not in ('ADD', 'SUB', 'MUL'):
                 results.append(calculated)
@@ -90,6 +89,7 @@ if __name__ == '__main__':
     print(parse_dice("2d6 * 1.5"))
     print(parse_dice("2d6"))
     print(parse_dice("1d20"))
+    print(parse_dice("1d2008989"))
     print(parse_dice("2"))
     print(parse_dice("2+3 + 4 1d6"))
     print(parse_dice("d%"))
