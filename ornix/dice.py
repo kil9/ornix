@@ -1,6 +1,7 @@
 import collections
-import re
+import math
 import random
+import re
 
 Token = collections.namedtuple('Token', ['type', 'value', 'd'])
 
@@ -10,7 +11,7 @@ def tokenize(code):
 
     token_specification = [
             ('DICE', r'(?P<dnum>\d*)[d|D](?P<dtype>[\d|%]+)'),
-            ('NUM', r'\d+'),
+            ('NUM', r'[\d|\.]+'),
             ('ADD', r'\+'),
             ('SUB', r'\-'),
             ('MUL', r'\*'),
@@ -78,7 +79,7 @@ def parse_dice(dice_str):
         token_before = token
     fields.append(' '.join(field))
     results.append(calculated)
-    results = list(map(eval, results))
+    results = list(map(math.floor, map(eval, results)))
     evaluated.append(evaluates)
     evaluates = []
     score = sum(scores)/len(scores) if len(scores) > 0 else 1
@@ -86,23 +87,14 @@ def parse_dice(dice_str):
 
 
 if __name__ == '__main__':
-    fields, evaluated, calculated, score = parse_dice("2d6")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("1d20")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("2")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("2+3 + 4 1d6")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("d%")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("2d%")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("1d20+3")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("1d4+1 1d4+1")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("1d4+2d6+1/1d4+1")
-    print(fields, evaluated, calculated, score)
-    fields, evaluated, calculated, score = parse_dice("1d4+1 / 1d4+1")
-    print(fields, evaluated, calculated, score)
+    print(parse_dice("2d6 * 1.5"))
+    print(parse_dice("2d6"))
+    print(parse_dice("1d20"))
+    print(parse_dice("2"))
+    print(parse_dice("2+3 + 4 1d6"))
+    print(parse_dice("d%"))
+    print(parse_dice("2d%"))
+    print(parse_dice("1d20+3"))
+    print(parse_dice("1d4+1 1d4+1"))
+    print(parse_dice("1d4+2d6+1/1d4+1"))
+    print(parse_dice("1d4+1 / 1d4+1"))
