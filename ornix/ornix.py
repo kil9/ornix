@@ -29,8 +29,10 @@ def round():
         round = 1
     elif commands[0] == 'end':
         round = 0
-    else:
+    elif len(commands[0]) == 0:
         round += 1
+    else:
+        round = get_int(commands[0], 1)
     contents['round'] = round
     team.set_contents(contents)
     db.session.add(team)
