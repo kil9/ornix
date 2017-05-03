@@ -32,6 +32,14 @@ def round():
     db.session.add(team)
     db.session.commit()
     if commands[0] == 'end':
+        characters = db.session.query(Character).all()
+        for character in characters:
+            contents = character.get_contents()
+            if 'last_init' in contents:
+                del(contents['last_init'])
+                character.set_contents(contents)
+                db.session.add(character)
+        db.session.commit()
         return make_response('*Rounds cleared!*')
 
     attachments = [{ 'title': 'Round {}'.format(round),
@@ -144,16 +152,6 @@ def dice():
         fields.append(field)
 
     return make_response(fields, title, color=color)
-
-def prettify(s):
-    s = re.sub(r'[ \t\/]+', ' ', s)
-    s = s.replace(' ', ' / ')
-    s = s.replace('+', ' + ')
-    s = s.replace('*', ' × ')
-    s = s.replace('-', ' - ')
-    s = s.replace(')', ') ')
-    s = s.replace('(', ' (')
-    return s
 
 
 @app.route('/api/spell', methods=['POST'])
@@ -314,11 +312,9 @@ def ac():
                 formatted = '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)
             else:
                 continue
-            field = {
-                    'title': character.name,
-                    'value': formatted,
-                    'short': True,
-                    }
+            field = { 'title': character.name,
+                      'value': formatted,
+                      'short': True, }
             fields.append(field)
 
         return make_response(fields, 'Party AC (normal/flat-footed/touch)')
