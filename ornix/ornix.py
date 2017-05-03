@@ -296,23 +296,38 @@ def ac():
     if len(commands[0]) == 0:
         ac = contents['ac']['normal'] if 'ac' in contents else 0
         ac_flatfooted = contents['ac']['flatfooted'] if 'ac' in contents else 0
-        ac_touch = contents['ac']['touch'] if 'ac' in contents else 0
+        ac_touch = contents['ac']['touch']
 
         fields = [{'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)}]
         return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name))
 
+    if len(commands) > 1 and commands[0] == 'set':
+        raw_acs = commands[1].split('/')
+        acs = list(map(lambda x: get_int(x, 0), raw_acs))[:3]
+        contents['ac'] = {'normal': acs[0],
+                          'flatfooted': acs[1],
+                          'touch': acs[2]}
+        set_and_commit(character, contents)
+        fields = [{'value': '{}/{}/{}'.format(acs[0], acs[1], acs[2])}]
+        return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name))
+
     if len(commands) > 1 and commands[0] in ('flat', 'flatfooted', 'flat-footed'):
-        ac = contents['ac']['normal'] if 'ac' in contents else 0
+        if 'ac' not in contents:
+            return make_response('Input normal AC first!')
+
+        ac = contents['ac']['normal']
         ac_flatfooted = get_int(commands[1], 0)
         contents['ac']['flatfooted'] = ac_flatfooted
-        ac_touch = contents['ac']['touch'] if 'ac' in contents else 0
+        ac_touch = contents['ac']['touch']
         set_and_commit(character, contents)
         fields = [{'value': '{}/{}/{}'.format(ac, ac_flatfooted, ac_touch)}]
         return make_response(fields, '{}\'s Current normal/flat-footed/touch AC'.format(name))
 
     if len(commands) > 1 and commands[0] in ('touch', 'touched'):
-        ac = contents['ac']['normal'] if 'ac' in contents else 0
-        ac_flatfooted = contents['ac']['flatfooted'] if 'ac' in contents else 0
+        if 'ac' not in contents:
+            return make_response('Input normal AC first!')
+        ac = contents['ac']['normal']
+        ac_flatfooted = contents['ac']['flatfooted']
         ac_touch = get_int(commands[1], 0)
         contents['ac']['touch'] = ac_touch
         set_and_commit(character, contents)
