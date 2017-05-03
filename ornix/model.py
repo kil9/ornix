@@ -22,7 +22,7 @@ class Team(db.Model):
     def __init__(self, team_id):
         self.team_id = team_id
         self.contents = '{}'
-    
+
     def __repr__(self):
         return '<Character [{}]>'.format(self.name)
 
@@ -31,6 +31,7 @@ class Team(db.Model):
 
     def set_contents(self, contents):
         self.contents = json.dumps(contents)
+
 
 class Character(db.Model):
     __tablename__ = 'characters'
@@ -58,5 +59,5 @@ class Character(db.Model):
 
 
 if __name__ == '__main__':
-    #db.drop_all()
+    # db.drop_all()
     db.create_all()

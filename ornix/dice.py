@@ -4,8 +4,9 @@ import random
 
 Token = collections.namedtuple('Token', ['type', 'value', 'd'])
 
+
 def tokenize(code):
-    keywords = {'DICE', 'ADD', 'SUB', 'MUL', 'SPLIT'}
+    # keywords = {'DICE', 'ADD', 'SUB', 'MUL', 'SPLIT'}
 
     token_specification = [
             ('DICE', r'(?P<dnum>\d*)[d|D](?P<dtype>[\d|%]+)'),
@@ -30,6 +31,7 @@ def tokenize(code):
             raise RuntimeError(f'{value!r} unexpected')
         else:
             yield Token(kind, value, d)
+
 
 def parse_dice(dice_str):
     tokens = tokenize(dice_str)
@@ -62,7 +64,7 @@ def parse_dice(dice_str):
             rolls = [random.randint(1, dtype) for i in range(dnum)]
             scores.append(sum(rolls)/len(rolls)/dtype)
             evaluates += rolls
-            
+
             calculated += str(sum(rolls))
         elif token.type == 'NUM':
             if token_before and token_before.type not in ('ADD', 'SUB', 'MUL'):
@@ -70,7 +72,7 @@ def parse_dice(dice_str):
                 calculated = ''
             field.append(token.value)
             calculated += str(token.value)
-        elif token.type in ('ADD', 'SUB','MUL'):
+        elif token.type in ('ADD', 'SUB', 'MUL'):
             field.append(token.value)
             calculated += str(token.value)
         token_before = token
@@ -81,8 +83,6 @@ def parse_dice(dice_str):
     evaluates = []
     score = sum(scores)/len(scores) if len(scores) > 0 else 1
     return fields, evaluated, results, score
-
-
 
 
 if __name__ == '__main__':

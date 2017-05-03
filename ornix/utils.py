@@ -2,6 +2,7 @@ from config import db
 
 BLUE = '#439FE0'
 
+
 def signed(n):
     if n > 0:
         return '+' + str(n)
@@ -9,6 +10,7 @@ def signed(n):
         return '0'
     else:
         return str(n)
+
 
 def modifier(n):
     if n > 0:
@@ -18,11 +20,13 @@ def modifier(n):
     else:
         return '- ' + str(abs(n))
 
+
 def get_int(n, default):
     try:
         return int(n)
     except ValueError:
         return default
+
 
 def get_color(score):
     if score > 0.8:
