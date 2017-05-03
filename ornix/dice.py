@@ -52,8 +52,6 @@ def parse_dice(dice_str):
                 calculated = ''
                 evaluated.append(evaluates)
                 evaluates = []
-                if len(fields) >= 5:
-                    break
             if len(token.d['dnum']) > 0:
                 dnum = max(1, min(100, int(token.d['dnum'])))
             else:
@@ -77,6 +75,8 @@ def parse_dice(dice_str):
             field.append(token.value)
             calculated += str(token.value)
         token_before = token
+        if len(evaluated) >= 4:
+            break
     fields.append(' '.join(field))
     results.append(calculated)
     results = list(map(math.floor, map(eval, results)))
