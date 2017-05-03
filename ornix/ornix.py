@@ -7,7 +7,7 @@ from flask import render_template
 from flask import request
 
 from config import *
-from dice_regex import *
+from dice import *
 from model import *
 from utils import *
 
@@ -122,13 +122,27 @@ def dice():
     name = character.name if not 'user_id' in contents else '<@{}|{}>'.format(contents['user_id'], character.name)
 
     try:
-        result, fields, score = calculate_dice(msg)
+        titles, evaluated, results, score = parse_dice(msg)
     except:
         return process_unknown(username)
 
     color = get_color(score)
-    msg = prettify(msg)
-    title = '{} rolled {}'.format(name, msg)
+    roll_title = ' / '.join(titles)
+    title = '{} rolled {}'.format(name, roll_title)
+    fields = []
+    for i in range(len(titles)):
+        if len(evaluated[i]) == 0:
+            continue
+        str_eval = map(str, evaluated[i])
+        field = { 'title': 'Rolls ({})'.format(titles[i]),
+                  'value': ' '.join(str_eval),
+                  'short': True }
+        fields.append(field)
+        field = { 'title': 'Result',
+                  'value': str(results[i]),
+                  'short': True }
+        fields.append(field)
+
     return make_response(fields, title, color=color)
 
 def prettify(s):
