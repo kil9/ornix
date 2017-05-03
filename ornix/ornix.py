@@ -392,8 +392,11 @@ def init():
     else:
         name = f'<@{contents["user_id"]}|{character.name}>'
 
-    if len(commands[0]) == 0 or commands[0] == 'roll':
-        init_mod = int(contents.get('init_mod', 0))
+    if len(commands[0]) == 0 or commands[0] == 'roll' or commands[0][0] in ('+', '-'):
+        if len(commands[0]) > 0 and commands[0][0] in ('+', '-'):
+            init_mod = get_int(commands[0], 0)
+        else:
+            init_mod = int(contents.get('init_mod', 0))
         title = '{} rolls 1d20 {}'.format(name, modifier(init_mod))
         roll = random.randint(1, 20)
         last_init = roll + init_mod
@@ -405,12 +408,7 @@ def init():
                    'short': True}]
         contents['last_init'] = last_init
         set_and_commit(character, contents)
-        if roll > 14:
-            color = 'good'
-        elif roll > 7:
-            color = 'warning'
-        else:
-            color = 'danger'
+        color = get_color(roll/20)
         return make_response(fields, title, color=color)
 
     if len(commands) > 1 and commands[0] == 'mod':
