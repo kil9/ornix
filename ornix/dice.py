@@ -7,8 +7,6 @@ Token = collections.namedtuple('Token', ['type', 'value', 'd'])
 
 
 def tokenize(code):
-    # keywords = {'DICE', 'ADD', 'SUB', 'MUL', 'SPLIT'}
-
     token_specification = [
             ('DICE', r'(?P<dnum>\d*)[d|D](?P<dtype>[\d|%]+)'),
             ('NUM', r'(\d*\.*\d+)'),

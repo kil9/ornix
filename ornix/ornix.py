@@ -529,7 +529,10 @@ def hp():
 
     if commands[0] == 'max':
         if len(commands) > 1:
-            max_hp = get_int(commands[1], 0)
+            if commands[1][0] in ('+', '-') and 'max_hp' in contents:
+                max_hp = get_int(commands[1], 0) + contents['max_hp']
+            else:
+                max_hp = get_int(commands[1], 0)
             hp = contents['hp'] if 'hp' in contents else max_hp
             contents['max_hp'] = max_hp
             contents['hp'] = hp
@@ -539,6 +542,7 @@ def hp():
         fields = [{'value': '{}/{}'.format(hp, max_hp)}]
         score = hp/max_hp if max_hp > 0 else 0
         return make_response(fields, '{}\'s Current HP'.format(name), color=get_color(score))
+
     if commands[0] == 'full':
         max_hp = int(contents['max_hp'])
         hp = max_hp
@@ -547,6 +551,7 @@ def hp():
 
         fields = [{'value': '{}/{}'.format(hp, max_hp)}]
         return make_response(fields, '{}\'s Current HP'.format(name), color=get_color(hp/max_hp))
+
     if commands[0] in ('REMOVE', 'CLEAR'):
         if 'max_hp' in contents:
             del(contents['max_hp'])
@@ -628,19 +633,15 @@ def api():
 
 def make_response(msg, title=None, color=BLUE, username=None):
     if type(msg) == list:
-        raw_data = {
-                'response_type': 'in_channel',
-                'attachments': [
-                    {'title': title,
-                     'color': color,
-                     'fields': msg}]}
+        raw_data = {'response_type': 'in_channel',
+                    'attachments': [{'title': title,
+                                     'color': color,
+                                     'fields': msg}]}
     else:
         if username and msg:
             msg = '@' + username + ' ' + msg
-        raw_data = {
-                "response_type": "in_channel",
-                "text": msg
-                }
+        raw_data = {'response_type': 'in_channel',
+                    'text': msg}
 
     encoded = json.dumps(raw_data)
     log.info(encoded)
