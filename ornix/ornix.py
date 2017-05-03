@@ -69,7 +69,7 @@ def stat(dict_form=False):
         contents = character.get_contents()
         if 'hp' in contents:
             hp = str(contents['hp'])
-            max_hp = str(contents['max_hp']) if 'max_hp' in contents else hp
+            max_hp = str(contents.get('max_hp', hp))
             name = character.name
             field = {
                     'title': name,
@@ -391,7 +391,7 @@ def init():
         name = f'<@{contents["user_id"]}|{character.name}>'
 
     if len(commands[0]) == 0 or commands[0] == 'roll':
-        init_mod = int(contents['init_mod']) if 'init_mod' in contents else 0
+        init_mod = int(contents.get('init_mod', 0))
         title = '{} rolls 1d20 {}'.format(name, modifier(init_mod))
         roll = random.randint(1, 20)
         last_init = roll + init_mod
@@ -486,8 +486,8 @@ def hp():
         name = f'<@{contents["user_id"]}|{character.name}>'
 
     if len(commands[0]) == 0:
-        hp = contents['hp'] if 'hp' in contents else 0
-        max_hp = contents['max_hp'] if 'max_hp' in contents else 0
+        hp = contents.get('hp', 0)
+        max_hp = contents.get('max_hp', 0)
         fields = [{'value': f'{hp}/{max_hp}'}]
         score = hp/max_hp if max_hp > 0 else 0
         return make_response(fields, f'{name}\'s Current HP', color=get_color(score))
@@ -501,7 +501,7 @@ def hp():
             contents = character.get_contents()
             if 'hp' in contents:
                 hp = str(contents['hp'])
-                max_hp = str(contents['max_hp']) if 'max_hp' in contents else hp
+                max_hp = str(contents.get('max_hp', hp))
                 name = character.name
                 field = {'title': name,
                          'value': '{}/{}'.format(hp, max_hp),
@@ -520,7 +520,7 @@ def hp():
             contents = character.get_contents()
             if 'hp' in contents:
                 hp = str(contents['hp'])
-                max_hp = str(contents['max_hp']) if 'max_hp' in contents else hp
+                max_hp = str(contents.get('max_hp', hp))
                 msgs.append(f'@{character.name} : {hp}/{max_hp}')
         msg = '\n'.join(msgs)
         return make_response(msg)
@@ -531,13 +531,14 @@ def hp():
                 max_hp = get_int(commands[1], 0) + contents['max_hp']
             else:
                 max_hp = get_int(commands[1], 0)
-            hp = contents['hp'] if 'hp' in contents else max_hp
+            hp = contents.get('hp', max_hp)
             contents['max_hp'] = max_hp
             contents['hp'] = hp
             set_and_commit(character, contents)
         else:
-            max_hp = contents['max_hp']
-        fields = [{'value': f'{current_hp}/{max_hp}'}]
+            max_hp = contents.get('max_hp', 0)
+            hp = contents.get('hp', max_hp)
+        fields = [{'value': f'{hp}/{max_hp}'}]
         score = hp/max_hp if max_hp > 0 else 0
         return make_response(fields, f'{name}\'s Current HP', color=get_color(score))
 
@@ -560,8 +561,8 @@ def hp():
 
     hp = get_int(commands[0], 0)
 
-    current_hp = int(contents['hp']) if 'hp' in contents else hp
-    max_hp = contents['max_hp'] if 'max_hp' in contents else current_hp
+    current_hp = int(contents.get('hp', hp))
+    max_hp = contents.get('max_hp', current_hp)
 
     if commands[0].startswith('+') or commands[0].startswith('-'):
         current_hp += hp

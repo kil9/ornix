@@ -40,9 +40,9 @@ def parse_dice(dice_str):
     evaluated = []
     calculated = ''
     results = []
-    token_before = None
     field = []
     scores = []
+    token_before = None
     for token in tokens:
         if token.type == 'DICE':
             if token_before and token_before.type not in ('ADD', 'SUB', 'MUL'):
