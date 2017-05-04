@@ -63,6 +63,14 @@ def stat(dict_form=False):
     # msg = request.form['text']
     attachments = []
     characters = db.session.query(Character).all()
+    if not dict_form:
+        team_id = request.form['team_id']
+        team = db.session.query(Team).filter(Team.team_id == team_id).one_or_none()
+        team = Team(team_id) if team is None else team
+        contents = team.get_contents()
+        round = contents.get('round', 1)
+        attachments = [{'title': f'Round {round}',
+                        'color': '#f48704'}]
 
 # read hp
     ratios = []
