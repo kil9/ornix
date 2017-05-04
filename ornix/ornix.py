@@ -548,7 +548,7 @@ def hp():
         contents['hp'] = hp
         set_and_commit(character, contents)
 
-        fields = [{'value': f'{current_hp}/{max_hp}'}]
+        fields = [{'value': f'{hp}/{max_hp}'}]
         return make_response(fields, f'{name}\'s Current HP', color=get_color(hp/max_hp))
 
     if commands[0] in ('REMOVE', 'CLEAR'):
