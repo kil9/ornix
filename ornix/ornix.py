@@ -69,8 +69,9 @@ def stat(dict_form=False):
         team = Team(team_id) if team is None else team
         contents = team.get_contents()
         round = contents.get('round', 1)
-        attachments = [{'title': f'Round {round}',
-                        'color': '#f48704'}]
+        if round > 0:
+            attachments = [{'title': f'Round {round}',
+                            'color': '#f48704'}]
 
 # read hp
     ratios = []
@@ -117,11 +118,12 @@ def stat(dict_form=False):
 
     fields = [{'value': formatted_inits}]
 
-    attach_init = {'title': 'Round initiatives',
-                   'fields': fields,
-                   'color': BLUE}
+    if len(formatted_inits) > 0:
+        attach_init = {'title': 'Round initiatives',
+                       'fields': fields,
+                       'color': BLUE}
 
-    attachments.append(attach_init)
+        attachments.append(attach_init)
     if dict_form:
         return attachments
 
