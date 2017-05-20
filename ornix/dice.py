@@ -45,6 +45,8 @@ def parse_dice(dice_str):
     token_before = None
     for token in tokens:
         if token.type == 'DICE':
+            if len(evaluated) > 10:
+                break
             if token_before and token_before.type not in ('ADD', 'SUB', 'MUL'):
                 fields.append(' '.join(field))
                 field = []
@@ -75,8 +77,6 @@ def parse_dice(dice_str):
             field.append(token.value)
             calculated += str(token.value)
         token_before = token
-        if len(evaluated) >= 4:
-            break
     fields.append(' '.join(field))
     results.append(calculated)
     results = list(map(math.floor, map(eval, results)))
