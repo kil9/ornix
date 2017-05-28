@@ -15,6 +15,51 @@ from utils import signed, modifier, get_int, set_and_commit, get_color, BLUE
 def main():
     return render_template('index.html')
 
+@app.route('/api/heal', methods=['POST'])
+def heal():
+    msg = request.form['text']
+    username = request.form['user_name']
+    user_id = request.form['user_id']
+    commands = msg.split(' ')
+    target = commands[0].replace('@', '')
+    amount = ' '.join(commands[1:])
+    character = get_character(target)
+    contents = character.get_contents()
+    contents['user_id'] = user_id
+
+    hp = int(contents.get('hp', 0))
+    max_hp = int(contents.get('max_hp', 0))
+
+    titles, evaluated, results, score = parse_dice(amount)
+    log.info(titles)
+    log.info(evaluated)
+    log.info(results)
+    log.info(score)
+
+    hp += sum(results)
+    hp = min(hp, max_hp)
+    contents['hp'] = hp
+    set_and_commit(character, contents)
+
+    fields = []
+    for i in range(len(titles)):
+        if len(evaluated[i]) == 0:
+            continue
+        str_eval = map(str, evaluated[i])
+        field = {'title': 'Rolls ({})'.format(titles[i]),
+                 'value': ' '.join(str_eval),
+                 'short': True}
+        fields.append(field)
+        field = {'title': 'Result',
+                 'value': str(results[i]),
+                 'short': True}
+        fields.append(field)
+    fields.append({
+        'title': f'{target}\'s Current HP',
+        'value': f'{hp}/{max_hp}'})
+
+    return make_response(fields, f'{username} healed {target}({amount})', color=get_color(hp/max_hp))
+
 
 @app.route('/api/round', methods=['POST'])
 def round():
@@ -73,7 +118,7 @@ def stat(dict_form=False):
             attachments = [{'title': f'Round {round}',
                             'color': '#f48704'}]
 
-# read hp
+    # read hp
     ratios = []
     fields = []
     for character in characters:
@@ -98,7 +143,7 @@ def stat(dict_form=False):
 
     attachments.append(attach_hp)
 
-# read initiatives
+    # read initiatives
     characters = db.session.query(Character).all()
 
     char_inits = []
@@ -562,6 +607,10 @@ def hp():
         return make_response(fields, f'{name}\'s Current HP', color=get_color(hp/max_hp))
 
     if commands[0] in ('REMOVE', 'CLEAR'):
+        if len(commands) > 1:
+            target = commands[1].replace('@', '')
+            character = get_character(target)
+            contents = character.get_contents()
         if 'max_hp' in contents:
             del(contents['max_hp'])
         if 'hp' in contents:
