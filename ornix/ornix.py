@@ -627,7 +627,7 @@ def hp():
         current_hp += hp
     else:
         current_hp = hp
-    current_hp = min(current_hp, max_hp)
+    #current_hp = min(current_hp, max_hp)
     #current_hp = max(-10, current_hp)
     contents['hp'] = current_hp
     contents['max_hp'] = max_hp
