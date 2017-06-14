@@ -68,8 +68,8 @@ def round():
     team_id = request.form['team_id']
     team = db.session.query(Team).filter(Team.team_id == team_id).one_or_none()
     team = Team(team_id) if team is None else team
-    contents = team.get_contents()
-    round = contents.get('round', 0)
+    team_contents = team.get_contents()
+    round = team_contents.get('round', 0)
     if commands[0] == 'start':
         round = 1
     elif commands[0] == 'end':
@@ -78,8 +78,8 @@ def round():
         round += 1
     else:
         round = get_int(commands[0], 1)
-    contents['round'] = round
-    team.set_contents(contents)
+    team_contents['round'] = round
+    team.set_contents(team_contents)
     db.session.add(team)
     db.session.commit()
     if commands[0] == 'end':
@@ -90,6 +90,10 @@ def round():
                 del(contents['last_init'])
                 character.set_contents(contents)
                 db.session.add(character)
+        if 'tmp_inits' in team_contents:
+            del(team_contents['tmp_inits'])
+            team.set_contents(team_contents)
+            db.session.add(team)
         db.session.commit()
         return make_response('*Rounds cleared!*')
 
@@ -437,6 +441,7 @@ def init():
 
     username = request.form['user_name']
     user_id = request.form['user_id']
+    team_id = request.form['team_id']
     commands = msg.split(' ')
 
     character = get_character(username)
@@ -474,15 +479,46 @@ def init():
         return make_response(fields, f'{name}\'s Initiative modifier')
 
     if commands[0] == 'set':
-        if len(commands) > 1:
+        if len(commands) == 2:
             last_init = get_int(commands[1], 0)
             contents['last_init'] = last_init
-        set_and_commit(character, contents)
-        fields = [{'value': str(last_init)}]
+            set_and_commit(character, contents)
+            fields = [{'value': str(last_init)}]
+        elif len(commands) > 2:
+
+            team = db.session.query(Team).filter(Team.team_id == team_id).one_or_none()
+            team = Team(team_id) if team is None else team
+            team_contents = team.get_contents()
+
+            tmp_inits = team_contents.get('tmp_inits', {})
+
+            last_init = get_int(commands[1], 0)
+            target = ' '.join(commands[2:])
+            if target.startswith('@'):
+                target = target[1:]
+
+            name = character.name
+            name = f'{target}({name})'
+            tmp_inits[name] = last_init
+
+            team_contents['tmp_inits'] = tmp_inits
+            team.set_contents(team_contents)
+            db.session.add(team)
+            db.session.commit()
+
+            fields = [{'value': str(last_init)}]
+
         return make_response(fields, f'{name}\'s Initiative value')
 
     if commands[0] in ('party', 'all'):
         characters = db.session.query(Character).all()
+
+        team = db.session.query(Team).filter(Team.team_id == team_id).one_or_none()
+        team = Team(team_id) if team is None else team
+        team_contents = team.get_contents()
+
+        tmp_inits = team_contents.get('tmp_inits', {})
+        log.info('tmp_inits: {}'.format(str(tmp_inits)))
 
         char_inits = []
         for character in characters:
@@ -494,6 +530,9 @@ def init():
                 else:
                     name = f'<@{contents["user_id"]}|{character.name}>'
                 char_inits.append((name, last_init))
+        for tmp_char in tmp_inits:
+            char_inits.append((tmp_char, tmp_inits[tmp_char]))
+
         sorted_inits = sorted(char_inits, key=lambda tup: tup[1], reverse=True)
 
         merged_inits = [f'{name} ({init})' for name, init in sorted_inits]
@@ -689,16 +728,23 @@ def api():
     return process_unknown(username)
 
 
+def make_private_response(msg, title=None, color=BLUE, username=None):
+    return do_make_response(msg, title, color, username, True)
+
 def make_response(msg, title=None, color=BLUE, username=None):
+    return do_make_response(msg, title, color, username, False)
+
+def do_make_response(msg, title, color, username, private):
+    response_type = 'in_channel' if not private else 'private'
     if type(msg) == list:
-        raw_data = {'response_type': 'in_channel',
+        raw_data = {'response_type': response_type,
                     'attachments': [{'title': title,
                                      'color': color,
                                      'fields': msg}]}
     else:
         if username and msg:
             msg = f'@{username} {msg}'
-        raw_data = {'response_type': 'in_channel',
+        raw_data = {'response_type': response_type,
                     'text': msg}
 
     encoded = json.dumps(raw_data)
