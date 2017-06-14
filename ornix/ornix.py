@@ -245,7 +245,7 @@ def spell():
     # contents - 'spell' - 'per day' - [...]
     #                    - 'left'    - [...]
 
-    if len(commands[0]) == 0 or commands[0] == 'book':
+    if len(commands[0]) == 0 or commands[0] in ('book', 'open'):
         if 'spell' not in contents:
             return make_response('Spells should be set first', username=username)
 
@@ -256,7 +256,10 @@ def spell():
                    'value': ' / '.join(map(str, per_days))},
                   {'title': 'Spells Left',
                    'value': ' / '.join(map(str, lefts))}]
-        return make_response(fields, f'{name}\'s Spellbook')
+        if commands[0] != 'open':
+            return make_private_response(fields, f'{name}\'s Spellbook')
+        else:
+            return make_response(fields, f'{name}\'s Spellbook')
 
     if len(commands) > 1 and commands[0] in ('set', 'per day'):
         raw_spells = commands[1].split('/')
@@ -289,7 +292,7 @@ def spell():
                    'value': ' / '.join(map(str, contents['spell']['per day']))},
                   {'title': 'Spells left',
                    'value': ' / '.join(map(str, spells))}]
-        return make_response(fields, f'{name}\'s Spellbook')
+        return make_private_response(fields, f'{name}\'s Spellbook')
 
     if len(commands) > 1 and commands[0] in ('use', 'cast'):
         if 'spell' not in contents:
@@ -308,8 +311,9 @@ def spell():
         per_day = contents['spell']['per day']
         lefts = contents['spell']['left']
         if lefts[used_level] <= 0:
-            fields = [{'title': 'Spells left',
-                       'value': ' / '.join(map(str, lefts))}]
+            #fields = [{'title': 'Spells left',
+                       #'value': ' / '.join(map(str, lefts))}]
+            fields = []
             return make_response(
                     fields, f'No {used_level}-level spells left!', color='danger')
         lefts[used_level] -= 1
@@ -317,8 +321,9 @@ def spell():
         set_and_commit(character, contents)
         score = lefts[used_level]/per_day[used_level] if per_day[used_level] != 0 else 0
         color = get_color(score)
-        fields = [{'title': 'Spells left',
-                   'value': ' / '.join(map(str, lefts))}]
+        #fields = [{'title': 'Spells left',
+                   #'value': ' / '.join(map(str, lefts))}]
+        fields = []
         return make_response(
                 fields,
                 f'{name} casted a {used_level}-level spell{spell_name}', color=color)
