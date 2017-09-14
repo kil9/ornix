@@ -298,35 +298,48 @@ def spell():
         if 'spell' not in contents:
             return make_response('Spells should be set first', username=username)
 
+        # multi cast
+        if ',' in commands[1]:
+            levels = commands[1].split(',')
+            used_levels = list(map(lambda x: get_int(x, 0), levels))
+        elif '/' in commands[1]:
+            levels = commands[1].split('/')
+            used_levels = list(map(lambda x: get_int(x, 0), levels))
+        else:
+            used_levels = [get_int(commands[1], 0)]
+
         if len(commands) > 2:
             spell_name = ': ' + ' '.join(commands[2:])
         else:
             spell_name = ''
 
-        used_level = get_int(commands[1], 0)
-        if used_level < 0 or used_level > 9:
-            return make_response(
-                    f'There are no {used_level}-level spells', username=username)
+        for used_level in used_levels:
+            if used_level < 0 or used_level > 9:
+                return make_response(
+                        f'There are no {used_level}-level spells', username=username)
 
         per_day = contents['spell']['per day']
         lefts = contents['spell']['left']
-        if lefts[used_level] <= 0:
+        color = get_color(1.0)
+        for used_level in used_levels:
+            if lefts[used_level] <= 0:
+                #fields = [{'title': 'Spells left',
+                           #'value': ' / '.join(map(str, lefts))}]
+                fields = []
+                return make_response(
+                        fields, f'No {used_level}-level spells left!', color='danger')
+        for used_level in used_levels:
+            lefts[used_level] -= 1
+            contents['spell']['left'] = lefts
+            set_and_commit(character, contents)
+            score = lefts[used_level]/per_day[used_level] if per_day[used_level] != 0 else 0
+            color = get_color(score)
             #fields = [{'title': 'Spells left',
                        #'value': ' / '.join(map(str, lefts))}]
-            fields = []
-            return make_response(
-                    fields, f'No {used_level}-level spells left!', color='danger')
-        lefts[used_level] -= 1
-        contents['spell']['left'] = lefts
-        set_and_commit(character, contents)
-        score = lefts[used_level]/per_day[used_level] if per_day[used_level] != 0 else 0
-        color = get_color(score)
-        #fields = [{'title': 'Spells left',
-                   #'value': ' / '.join(map(str, lefts))}]
         fields = []
         return make_response(
                 fields,
-                f'{name} casted a {used_level}-level spell{spell_name}', color=color)
+                f'{name} casted a {commands[1]} level spell(s); {spell_name}', color=color)
 
     if commands[0] in ('full', 'memorize'):
         if 'spell' not in contents:
